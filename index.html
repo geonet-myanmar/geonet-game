@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoNet - Interactive Geology Quiz</title>
+<style>
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1f2b47;
+  --bg-card-hover: #273554;
+  --accent-gold: #d4a84b;
+  --accent-amber: #c98a3d;
+  --accent-teal: #2ec4b6;
+  --accent-red: #e63946;
+  --accent-green: #4ecdc4;
+  --accent-blue: #4895ef;
+  --accent-purple: #7b5ea7;
+  --accent-orange: #e76f51;
+  --text-primary: #edf2f4;
+  --text-secondary: #8d99ae;
+  --text-muted: #5c6b7f;
+  --border: #2a3a5c;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --transition: 0.3s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.screen {
+  display: none;
+  min-height: 100vh;
+  animation: fadeIn 0.4s ease;
+}
+.screen.active { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Splash Screen */
+#splash {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  text-align: center;
+  padding: 24px;
+}
+.splash-icon {
+  font-size: 80px;
+  animation: pulse 2s ease infinite;
+}
+.splash-title {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+.splash-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 420px;
+}
+.btn {
+  padding: 14px 36px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-amber));
+  color: #1a1a2e;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,168,75,0.3); }
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--bg-card-hover); }
+.btn-small { padding: 8px 20px; font-size: 0.85rem; }
+
+/* Difficulty Select */
+#difficulty-select {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+}
+.difficulty-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 600px;
+}
+.diff-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 32px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+  min-width: 160px;
+}
+.diff-card:hover { transform: translateY(-3px); border-color: var(--accent-gold); }
+.diff-card .diff-icon { font-size: 2rem; margin-bottom: 8px; }
+.diff-card .diff-name { font-weight: 700; font-size: 1.1rem; }
+.diff-card .diff-desc { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
+
+/* Category Screen */
+#categories {
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  gap: 24px;
+}
+.screen-header {
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+}
+.screen-header h2 {
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+.screen-header p { color: var(--text-secondary); }
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+}
+.category-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.category-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-gold);
+  box-shadow: var(--shadow);
+}
+.category-card .cat-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.category-card .cat-name { font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+.category-card .cat-count { color: var(--text-secondary); font-size: 0.85rem; }
+.category-card .cat-progress {
+  position: absolute; bottom: 0; left: 0;
+  height: 4px; background: var(--accent-teal);
+  transition: width 0.4s ease;
+}
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 800px;
+}
+.high-score-badge {
+  background: var(--bg-card);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: var(--accent-gold);
+  border: 1px solid var(--border);
+}
+
+/* Quiz Screen */
+#quiz {
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  gap: 16px;
+}
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 700px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quiz-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  background: var(--bg-card);
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+.quiz-stat .stat-icon { font-size: 1.1rem; }
+.lives { color: var(--accent-red); }
+.score-val { color: var(--accent-gold); font-weight: 700; }
+.streak-val { color: var(--accent-orange); font-weight: 700; }
+
+.timer-bar-container {
+  width: 100%;
+  max-width: 700px;
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.timer-bar {
+  height: 100%;
+  background: var(--accent-teal);
+  border-radius: 3px;
+  transition: width 0.25s linear, background 0.3s;
+}
+.timer-bar.warning { background: var(--accent-orange); }
+.timer-bar.danger { background: var(--accent-red); }
+
+.progress-info {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.progress-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 12px;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent-blue);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.question-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 700px;
+  animation: slideDown 0.35s ease;
+}
+.question-category-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  background: rgba(46,196,182,0.15);
+  color: var(--accent-teal);
+}
+.question-text {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+.question-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+/* Multiple Choice */
+.options-grid {
+  display: grid;
+  gap: 10px;
+}
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 1rem;
+  color: var(--text-primary);
+  text-align: left;
+  width: 100%;
+}
+.option-btn:hover:not(.disabled) {
+  border-color: var(--accent-gold);
+  background: var(--bg-card-hover);
+}
+.option-btn .option-letter {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  background: var(--bg-primary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.option-btn.correct {
+  border-color: var(--accent-green);
+  background: rgba(78,205,196,0.12);
+}
+.option-btn.correct .option-letter { background: var(--accent-green); color: #1a1a2e; }
+.option-btn.incorrect {
+  border-color: var(--accent-red);
+  background: rgba(230,57,70,0.12);
+  animation: shake 0.4s ease;
+}
+.option-btn.incorrect .option-letter { background: var(--accent-red); color: white; }
+.option-btn.disabled { pointer-events: none; opacity: 0.6; }
+
+/* True/False */
+.tf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.tf-btn {
+  padding: 18px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: var(--transition);
+  text-align: center;
+}
+.tf-btn:hover:not(.disabled) { border-color: var(--accent-gold); background: var(--bg-card-hover); }
+.tf-btn.correct { border-color: var(--accent-green); background: rgba(78,205,196,0.12); }
+.tf-btn.incorrect { border-color: var(--accent-red); background: rgba(230,57,70,0.12); animation: shake 0.4s ease; }
+.tf-btn.disabled { pointer-events: none; opacity: 0.6; }
+
+/* Drag-and-drop ordering */
+.ordering-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.drag-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: grab;
+  transition: var(--transition);
+  user-select: none;
+  font-size: 1rem;
+}
+.drag-item:active { cursor: grabbing; }
+.drag-item .drag-handle {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.drag-item.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+}
+.drag-item.drag-over {
+  border-color: var(--accent-teal);
+  background: rgba(46,196,182,0.08);
+}
+.drag-item .order-num {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.submit-order-btn {
+  margin-top: 12px;
+}
+
+.feedback-text {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  animation: slideDown 0.3s ease;
+  display: none;
+}
+.feedback-text.show { display: block; }
+.feedback-text.correct-feedback {
+  background: rgba(78,205,196,0.12);
+  border: 1px solid rgba(78,205,196,0.3);
+  color: var(--accent-green);
+}
+.feedback-text.incorrect-feedback {
+  background: rgba(230,57,70,0.1);
+  border: 1px solid rgba(230,57,70,0.25);
+  color: #f0a0a8;
+}
+
+/* Results Screen */
+#results {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  text-align: center;
+}
+.results-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  max-width: 500px;
+  width: 100%;
+}
+.results-title {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.results-score {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  margin: 12px 0;
+}
+.results-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0;
+}
+.result-stat {
+  background: var(--bg-card);
+  padding: 14px;
+  border-radius: 10px;
+}
+.result-stat .stat-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.result-stat .stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.results-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.new-high-score {
+  color: var(--accent-gold);
+  font-weight: 700;
+  font-size: 1.1rem;
+  animation: pulse 1.5s ease infinite;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .quiz-header { justify-content: center; }
+  .question-card { padding: 20px 16px; }
+  .question-text { font-size: 1.05rem; }
+  .category-grid { grid-template-columns: 1fr 1fr; }
+  .tf-grid { grid-template-columns: 1fr; }
+  .results-stats { grid-template-columns: 1fr 1fr; }
+  .difficulty-grid { flex-direction: column; align-items: stretch; }
+  .diff-card { min-width: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splash" class="screen active">
+  <div class="splash-icon">&#x1F30D;</div>
+  <h1 class="splash-title">GeoNet</h1>
+  <p class="splash-subtitle">Master geology through interactive quizzes. Test your knowledge of minerals, plate tectonics, geologic time, and more.</p>
+  <button class="btn btn-primary" onclick="showScreen('difficulty-select')">Start Learning</button>
+  <button class="btn btn-secondary btn-small" onclick="resetProgress()">Reset Progress</button>
+</div>
+
+<!-- Difficulty Select -->
+<div id="difficulty-select" class="screen">
+  <h2 style="font-size:1.6rem;">Select Difficulty</h2>
+  <p style="color:var(--text-secondary);margin-bottom:8px;">Choose your challenge level</p>
+  <div class="difficulty-grid">
+    <div class="diff-card" onclick="setDifficulty('beginner')">
+      <div class="diff-icon">&#x1F331;</div>
+      <div class="diff-name">Beginner</div>
+      <div class="diff-desc">Fundamental concepts</div>
+    </div>
+    <div class="diff-card" onclick="setDifficulty('intermediate')">
+      <div class="diff-icon">&#x26F0;&#xFE0F;</div>
+      <div class="diff-name">Intermediate</div>
+      <div class="diff-desc">Applied knowledge</div>
+    </div>
+    <div class="diff-card" onclick="setDifficulty('advanced')">
+      <div class="diff-icon">&#x1F30B;</div>
+      <div class="diff-name">Advanced</div>
+      <div class="diff-desc">Expert-level questions</div>
+    </div>
+  </div>
+  <button class="btn btn-secondary btn-small" onclick="showScreen('splash')" style="margin-top:8px;">Back</button>
+</div>
+
+<!-- Category Select -->
+<div id="categories" class="screen">
+  <div class="top-bar">
+    <button class="btn btn-secondary btn-small" onclick="showScreen('difficulty-select')">&#8592; Back</button>
+    <div class="high-score-badge">&#x1F3C6; Best: <span id="global-high">0</span></div>
+  </div>
+  <div class="screen-header">
+    <h2>Choose a Category</h2>
+    <p>Difficulty: <strong id="diff-label"></strong></p>
+  </div>
+  <div class="category-grid" id="category-grid"></div>
+</div>
+
+<!-- Quiz Screen -->
+<div id="quiz" class="screen">
+  <div class="quiz-header">
+    <div class="quiz-stat"><span class="stat-icon">&#x2764;&#xFE0F;</span> <span class="lives" id="lives-display">3</span></div>
+    <div class="quiz-stat"><span class="stat-icon">&#x2B50;</span> <span class="score-val" id="score-display">0</span></div>
+    <div class="quiz-stat"><span class="stat-icon">&#x1F525;</span> <span class="streak-val" id="streak-display">0</span></div>
+    <div class="quiz-stat"><span class="stat-icon">&#x23F1;&#xFE0F;</span> <span id="timer-display">15</span>s</div>
+  </div>
+  <div class="timer-bar-container"><div class="timer-bar" id="timer-bar"></div></div>
+  <div class="progress-info">
+    <span id="q-progress">1 / 10</span>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="q-progress-bar"></div></div>
+    <span id="q-category-label"></span>
+  </div>
+  <div class="question-card" id="question-card">
+    <div class="question-category-tag" id="q-tag"></div>
+    <div class="question-text" id="q-text"></div>
+    <div class="question-hint" id="q-hint" style="display:none;"></div>
+    <div id="answer-area"></div>
+    <div class="feedback-text" id="feedback"></div>
+  </div>
+</div>
+
+<!-- Results Screen -->
+<div id="results" class="screen">
+  <div class="results-card">
+    <div id="results-emoji" style="font-size:3rem;"></div>
+    <div class="results-title" id="results-title">Round Complete!</div>
+    <div id="new-hs" class="new-high-score" style="display:none;">&#x1F389; New High Score!</div>
+    <div class="results-score" id="results-score">0</div>
+    <div class="results-stats">
+      <div class="result-stat"><div class="stat-val" id="res-correct" style="color:var(--accent-green);">0</div><div class="stat-label">Correct</div></div>
+      <div class="result-stat"><div class="stat-val" id="res-wrong" style="color:var(--accent-red);">0</div><div class="stat-label">Wrong</div></div>
+      <div class="result-stat"><div class="stat-val" id="res-streak" style="color:var(--accent-orange);">0</div><div class="stat-label">Best Streak</div></div>
+      <div class="result-stat"><div class="stat-val" id="res-accuracy" style="color:var(--accent-blue);">0%</div><div class="stat-label">Accuracy</div></div>
+    </div>
+  </div>
+  <div class="results-actions">
+    <button class="btn btn-primary" onclick="restartCategory()">Play Again</button>
+    <button class="btn btn-secondary" onclick="showScreen('categories')">Categories</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// QUESTION BANK
+// ============================================================
+const questions = {
+  minerals: {
+    name: "Mineral & Rock ID",
+    icon: "\u{1F48E}",
+    beginner: [
+      { type:"mc", q:"What is the hardness of diamond on the Mohs scale?", options:["7","8","9","10"], answer:3 },
+      { type:"mc", q:"Which mineral is the main component of common glass?", options:["Feldspar","Quartz","Calcite","Mica"], answer:1 },
+      { type:"mc", q:"What type of rock is granite?", options:["Sedimentary","Metamorphic","Igneous intrusive","Igneous extrusive"], answer:2 },
+      { type:"tf", q:"Obsidian is a type of sedimentary rock.", answer:false, explanation:"Obsidian is volcanic glass, an extrusive igneous rock." },
+      { type:"mc", q:"Which property describes how a mineral breaks along flat planes?", options:["Fracture","Luster","Cleavage","Streak"], answer:2 },
+      { type:"mc", q:"What is the softest mineral on the Mohs hardness scale?", options:["Gypsum","Talc","Calcite","Fluorite"], answer:1 },
+      { type:"tf", q:"Marble is a metamorphic rock formed from limestone.", answer:true, explanation:"Marble forms when limestone undergoes metamorphism." },
+      { type:"mc", q:"Which mineral fizzes when hydrochloric acid is applied?", options:["Quartz","Feldspar","Calcite","Pyrite"], answer:2 },
+      { type:"mc", q:"What type of rock is sandstone?", options:["Igneous","Metamorphic","Sedimentary","Volcanic"], answer:2 },
+      { type:"tf", q:"A mineral's streak color is always the same as its surface color.", answer:false, explanation:"Streak color often differs from the mineral's external color. For example, hematite appears silver but has a red streak." },
+      { type:"mc", q:"Which luster describes minerals that look like metals?", options:["Vitreous","Adamantine","Metallic","Pearly"], answer:2 },
+      { type:"mc", q:"Pumice is a rock that can float on water. What type of rock is it?", options:["Sedimentary","Metamorphic","Extrusive igneous","Intrusive igneous"], answer:2 },
+    ],
+    intermediate: [
+      { type:"mc", q:"Which mineral group makes up about 60% of the Earth's crust?", options:["Quartz","Feldspar","Mica","Amphibole"], answer:1 },
+      { type:"mc", q:"What is the protolith (parent rock) of schist?", options:["Sandstone","Shale/mudstone","Limestone","Granite"], answer:1 },
+      { type:"tf", q:"Foliation in metamorphic rocks indicates directed pressure during formation.", answer:true, explanation:"Foliation results from minerals aligning perpendicular to directed (differential) pressure." },
+      { type:"mc", q:"Which texture describes an igneous rock with two distinct crystal sizes?", options:["Phaneritic","Aphanitic","Porphyritic","Glassy"], answer:2 },
+      { type:"mc", q:"Halite (rock salt) belongs to which mineral class?", options:["Silicates","Carbonates","Halides","Sulfates"], answer:2 },
+      { type:"mc", q:"Which rock forms from the cooling of magma deep underground?", options:["Basalt","Rhyolite","Gabbro","Andesite"], answer:2 },
+      { type:"tf", q:"Conglomerate and breccia differ primarily in the roundness of their clasts.", answer:true, explanation:"Conglomerate has rounded clasts; breccia has angular clasts." },
+      { type:"mc", q:"What type of metamorphism occurs at tectonic plate boundaries with high pressure and temperature?", options:["Contact","Regional","Dynamic","Hydrothermal"], answer:1 },
+      { type:"order", q:"Order these igneous rocks from most felsic to most mafic:", items:["Granite","Diorite","Gabbro","Peridotite"], correctOrder:[0,1,2,3] },
+      { type:"mc", q:"Which mineral has perfect basal cleavage and is commonly found in thin transparent sheets?", options:["Quartz","Muscovite mica","Feldspar","Garnet"], answer:1 },
+      { type:"mc", q:"What gives the mineral olivine its characteristic green color?", options:["Copper","Chromium","Iron and magnesium","Nickel"], answer:2 },
+      { type:"tf", q:"Intrusive igneous rocks typically have larger crystals than extrusive igneous rocks.", answer:true, explanation:"Slower cooling underground allows larger crystal growth." },
+    ],
+    advanced: [
+      { type:"mc", q:"In Bowen's Reaction Series, which mineral crystallizes first from a mafic magma?", options:["Quartz","Muscovite","Olivine","Biotite"], answer:2 },
+      { type:"mc", q:"What is the crystal system of quartz?", options:["Cubic","Hexagonal","Orthorhombic","Monoclinic"], answer:1 },
+      { type:"order", q:"Order Bowen's discontinuous series from highest to lowest crystallization temperature:", items:["Olivine","Pyroxene","Amphibole","Biotite"], correctOrder:[0,1,2,3] },
+      { type:"tf", q:"Polymorphs are minerals with the same chemical formula but different crystal structures.", answer:true, explanation:"Diamond and graphite are polymorphs — both are pure carbon but with different crystal structures." },
+      { type:"mc", q:"Which index mineral indicates the garnet zone of regional metamorphism?", options:["Chlorite","Biotite","Garnet","Sillimanite"], answer:2 },
+      { type:"mc", q:"Migmatite forms under what conditions?", options:["Low-grade metamorphism","Contact metamorphism only","Partial melting at high-grade metamorphism","Diagenesis"], answer:2 },
+      { type:"mc", q:"Which silicate structure consists of single chains of tetrahedra?", options:["Nesosilicates","Inosilicates (single chain)","Phyllosilicates","Tectosilicates"], answer:1 },
+      { type:"tf", q:"The plagioclase feldspar series is an example of a solid solution.", answer:true, explanation:"Plagioclase ranges continuously from albite (Na) to anorthite (Ca) end members." },
+      { type:"mc", q:"What metamorphic facies corresponds to blueschist conditions?", options:["High T, low P","Low T, high P","High T, high P","Low T, low P"], answer:1 },
+      { type:"mc", q:"Which texture forms when a metamorphic rock is subjected to extreme strain, producing thin laminae?", options:["Schistosity","Mylonitic","Gneissic banding","Phyllitic"], answer:1 },
+    ]
+  },
+  time: {
+    name: "Geologic Time",
+    icon: "\u{23F3}",
+    beginner: [
+      { type:"mc", q:"Which eon encompasses most of Earth's history (about 4 billion years)?", options:["Phanerozoic","Proterozoic","Precambrian/Hadean–Archean–Proterozoic","Cenozoic"], answer:2 },
+      { type:"mc", q:"In which era did dinosaurs dominate the Earth?", options:["Paleozoic","Mesozoic","Cenozoic","Precambrian"], answer:1 },
+      { type:"tf", q:"The Jurassic Period is part of the Mesozoic Era.", answer:true, explanation:"The Mesozoic Era consists of the Triassic, Jurassic, and Cretaceous periods." },
+      { type:"mc", q:"What principle states that in undisturbed rock layers, the oldest layers are at the bottom?", options:["Cross-cutting","Superposition","Lateral continuity","Faunal succession"], answer:1 },
+      { type:"mc", q:"Approximately how old is the Earth?", options:["4.6 million years","4.6 billion years","46 billion years","460 million years"], answer:1 },
+      { type:"mc", q:"Which period is known as the 'Age of Fishes'?", options:["Cambrian","Silurian","Devonian","Carboniferous"], answer:2 },
+      { type:"tf", q:"The Cambrian Explosion refers to a rapid increase in volcanic activity.", answer:false, explanation:"The Cambrian Explosion was a rapid diversification of multicellular life forms." },
+      { type:"mc", q:"Which epoch are we currently living in?", options:["Pleistocene","Holocene","Miocene","Pliocene"], answer:1 },
+      { type:"mc", q:"What method is used to determine the absolute age of rocks using radioactive decay?", options:["Stratigraphy","Radiometric dating","Fossil correlation","Magnetostratigraphy"], answer:1 },
+      { type:"tf", q:"An unconformity represents a gap in the geologic record.", answer:true, explanation:"Unconformities indicate periods of erosion or non-deposition." },
+    ],
+    intermediate: [
+      { type:"order", q:"Order these geologic eras from oldest to youngest:", items:["Precambrian","Paleozoic","Mesozoic","Cenozoic"], correctOrder:[0,1,2,3] },
+      { type:"mc", q:"Which mass extinction event ended the Paleozoic Era?", options:["K-Pg extinction","Permian-Triassic extinction","Ordovician-Silurian extinction","Triassic-Jurassic extinction"], answer:1 },
+      { type:"mc", q:"The half-life of Carbon-14 is approximately:", options:["1,300 years","5,730 years","13,000 years","57,300 years"], answer:1 },
+      { type:"tf", q:"An angular unconformity shows tilted layers below horizontal layers.", answer:true, explanation:"Angular unconformities indicate older rocks were deformed and eroded before new sediment was deposited." },
+      { type:"mc", q:"Which period saw the formation of extensive coal swamps?", options:["Devonian","Carboniferous","Permian","Triassic"], answer:1 },
+      { type:"order", q:"Order these periods of the Mesozoic from oldest to youngest:", items:["Triassic","Jurassic","Cretaceous"], correctOrder:[0,1,2] },
+      { type:"mc", q:"What is an index fossil?", options:["The largest fossil in a formation","A fossil used to date and correlate rock layers","A fossil of a living species","Any fossilized plant"], answer:1 },
+      { type:"mc", q:"Which isotope pair is used for dating very old rocks (billions of years)?", options:["Carbon-14/Nitrogen-14","Uranium-238/Lead-206","Potassium-40/Argon-40","Both B and C"], answer:3 },
+      { type:"tf", q:"The Holocene began approximately 11,700 years ago.", answer:true, explanation:"The Holocene epoch started at the end of the last glacial period, roughly 11,700 years ago." },
+      { type:"mc", q:"What type of unconformity exists between sedimentary rock on top of igneous or metamorphic rock?", options:["Angular unconformity","Disconformity","Nonconformity","Paraconformity"], answer:2 },
+    ],
+    advanced: [
+      { type:"mc", q:"Which geochronological method uses the decay of Samarium-147 to Neodymium-143?", options:["Sm-Nd dating","Rb-Sr dating","Lu-Hf dating","Re-Os dating"], answer:0 },
+      { type:"order", q:"Order these Paleozoic periods from oldest to youngest:", items:["Cambrian","Ordovician","Silurian","Devonian"], correctOrder:[0,1,2,3] },
+      { type:"tf", q:"Zircon crystals can preserve radiometric ages through multiple metamorphic events due to their chemical stability.", answer:true, explanation:"Zircon is extremely resistant and can retain U-Pb age information despite subsequent geological processes." },
+      { type:"mc", q:"The Great Oxidation Event occurred approximately when?", options:["3.8 Ga","2.4 Ga","1.2 Ga","541 Ma"], answer:1 },
+      { type:"mc", q:"Which biostratigraphic zone is defined by the first appearance datum (FAD) of a fossil taxon?", options:["Range zone","Interval zone","Assemblage zone","Taxon range zone"], answer:3 },
+      { type:"mc", q:"The GSSP (Global Boundary Stratotype Section and Point) is also known as:", options:["Fossil datum","Golden spike","Type section","Reference horizon"], answer:1 },
+      { type:"mc", q:"What caused the end-Cretaceous mass extinction (K-Pg)?", options:["Volcanic flood basalts only","Asteroid impact and Deccan Traps volcanism","Solar flare","Global glaciation"], answer:1 },
+      { type:"tf", q:"Magnetostratigraphy relies on periodic reversals of Earth's magnetic field recorded in rocks.", answer:true, explanation:"Rocks record magnetic polarity at formation, allowing correlation via known reversal timescales." },
+      { type:"mc", q:"The Ediacaran Period is notable for:", options:["First land plants","First hard-shelled organisms","Earliest complex multicellular soft-bodied organisms","First vertebrates"], answer:2 },
+      { type:"mc", q:"What is the closure temperature concept in thermochronology?", options:["The temperature at which magma solidifies","The temperature below which a mineral retains radiogenic daughter isotopes","The temperature of peak metamorphism","The temperature at which fossils are destroyed"], answer:1 },
+    ]
+  },
+  tectonics: {
+    name: "Plate Tectonics",
+    icon: "\u{1F30E}",
+    beginner: [
+      { type:"mc", q:"What is the name of the supercontinent that existed about 250 million years ago?", options:["Rodinia","Pangaea","Gondwana","Laurasia"], answer:1 },
+      { type:"mc", q:"What type of plate boundary is the Mid-Atlantic Ridge?", options:["Convergent","Divergent","Transform","Subduction"], answer:1 },
+      { type:"tf", q:"The San Andreas Fault is a transform plate boundary.", answer:true, explanation:"The San Andreas Fault is where the Pacific and North American plates slide past each other." },
+      { type:"mc", q:"What drives the movement of tectonic plates?", options:["Gravity only","Convection currents in the mantle","Wind erosion","Moon's tidal forces"], answer:1 },
+      { type:"mc", q:"Which layer of the Earth do tectonic plates sit on?", options:["Inner core","Outer core","Asthenosphere","Lower mantle"], answer:2 },
+      { type:"mc", q:"What forms when two continental plates collide?", options:["Ocean trench","Volcanic island arc","Mountain range","Mid-ocean ridge"], answer:2 },
+      { type:"tf", q:"Oceanic crust is generally thicker than continental crust.", answer:false, explanation:"Oceanic crust is thinner (5–10 km) but denser than continental crust (30–70 km thick)." },
+      { type:"mc", q:"Which ocean is getting wider due to seafloor spreading?", options:["Pacific","Atlantic","Indian","Arctic"], answer:1 },
+      { type:"mc", q:"What feature forms at a convergent boundary where oceanic crust subducts?", options:["Mid-ocean ridge","Rift valley","Deep ocean trench","Transform fault"], answer:2 },
+      { type:"tf", q:"Hawaii is located on a plate boundary.", answer:false, explanation:"Hawaii is over a hotspot in the middle of the Pacific Plate, not on a plate boundary." },
+    ],
+    intermediate: [
+      { type:"mc", q:"What evidence did Harry Hess use to propose seafloor spreading?", options:["Fossil distribution","Magnetic striping on the ocean floor","Mountain heights","Earthquake depths"], answer:1 },
+      { type:"mc", q:"A Wadati-Benioff zone is associated with:", options:["Transform faults","Mid-ocean ridges","Subduction zones","Hotspots"], answer:2 },
+      { type:"order", q:"Order these from the surface downward at a subduction zone:", items:["Accretionary wedge","Oceanic trench","Subducting slab","Mantle wedge"], correctOrder:[0,1,2,3] },
+      { type:"tf", q:"Ophiolites are sections of oceanic crust and upper mantle thrust onto continental crust.", answer:true, explanation:"Ophiolites are key evidence for plate tectonics, preserving oceanic lithosphere on land." },
+      { type:"mc", q:"Back-arc basins form due to:", options:["Continental collision","Extension behind a subduction zone","Transform faulting","Hotspot volcanism"], answer:1 },
+      { type:"mc", q:"Wilson cycle describes:", options:["The rock cycle","The opening and closing of ocean basins","Mantle convection patterns","Earthquake recurrence"], answer:1 },
+      { type:"mc", q:"What type of volcanism is associated with continental rift zones?", options:["Andesitic","Basaltic","Rhyolitic only","No volcanism occurs"], answer:1 },
+      { type:"tf", q:"The Ring of Fire encircles the Atlantic Ocean.", answer:false, explanation:"The Ring of Fire encircles the Pacific Ocean." },
+      { type:"mc", q:"Passive continental margins are characterized by:", options:["Active volcanism","Deep ocean trenches","Thick sedimentary deposits and no plate boundary","Frequent earthquakes"], answer:2 },
+      { type:"mc", q:"Triple junctions are points where:", options:["Three continents meet","Three plate boundaries intersect","Three fault lines cross","Three volcanoes align"], answer:1 },
+    ],
+    advanced: [
+      { type:"mc", q:"Slab rollback is a mechanism that:", options:["Pushes plates together","Causes trench retreat and back-arc extension","Creates hotspots","Stops subduction"], answer:1 },
+      { type:"tf", q:"Plate motion can be described using Euler poles of rotation.", answer:true, explanation:"Plate motions on a sphere are rotations, described by an Euler pole and angular velocity." },
+      { type:"mc", q:"What is the driving force behind ridge push?", options:["Gravitational sliding of lithosphere away from elevated ridges","Mantle plume upwelling only","Tidal forces","Core-mantle coupling"], answer:0 },
+      { type:"mc", q:"Flat-slab subduction is associated with:", options:["Normal arc volcanism","Absence of arc volcanism and inland deformation","Back-arc spreading","Passive margins"], answer:1 },
+      { type:"order", q:"Order the stages of the Wilson Cycle:", items:["Continental rifting","Seafloor spreading","Subduction begins","Continental collision"], correctOrder:[0,1,2,3] },
+      { type:"mc", q:"Terrane accretion refers to:", options:["Erosion of continental margins","Addition of exotic crustal fragments to a continent at a subduction zone","Formation of volcanic islands","Glacial deposition"], answer:1 },
+      { type:"mc", q:"What geophysical method images subducted slabs in the mantle?", options:["Gravity surveys","Seismic tomography","Magnetometry","Electrical resistivity"], answer:1 },
+      { type:"tf", q:"Large Low-Shear-Velocity Provinces (LLSVPs) at the base of the mantle may influence plume locations.", answer:true, explanation:"LLSVPs are massive deep-mantle structures that appear to be source regions for some mantle plumes." },
+      { type:"mc", q:"The absolute motion of plates is best determined using:", options:["Relative motion between plate pairs","Hotspot reference frames and space geodesy","Fossil evidence","Paleomagnetic poles alone"], answer:1 },
+      { type:"mc", q:"Obduction is the process of:", options:["Subduction of continental crust","Overthrusting of oceanic crust onto continental crust","Seafloor spreading","Mantle delamination"], answer:1 },
+    ]
+  },
+  structure: {
+    name: "Earth Structure",
+    icon: "\u{1F310}",
+    beginner: [
+      { type:"mc", q:"What is the thinnest layer of the Earth?", options:["Mantle","Outer core","Inner core","Crust"], answer:3 },
+      { type:"mc", q:"What are the two types of seismic waves that travel through Earth's interior?", options:["S-waves and L-waves","P-waves and S-waves","R-waves and P-waves","Surface and body waves"], answer:1 },
+      { type:"tf", q:"The inner core of the Earth is liquid.", answer:false, explanation:"The inner core is solid iron-nickel, despite the extreme temperatures, due to immense pressure." },
+      { type:"mc", q:"Which layer of the Earth is liquid?", options:["Inner core","Outer core","Crust","Mantle"], answer:1 },
+      { type:"mc", q:"What is the boundary between the crust and mantle called?", options:["Gutenberg discontinuity","Mohorovičić discontinuity","Lehmann discontinuity","Conrad discontinuity"], answer:1 },
+      { type:"mc", q:"Which seismic wave is fastest?", options:["S-wave","Surface wave","P-wave","Love wave"], answer:2 },
+      { type:"tf", q:"P-waves can travel through both solids and liquids.", answer:true, explanation:"P-waves (primary/compressional waves) travel through all states of matter." },
+      { type:"mc", q:"Earth's magnetic field is generated primarily in the:", options:["Crust","Mantle","Outer core","Inner core"], answer:2 },
+      { type:"mc", q:"The asthenosphere is part of which layer?", options:["Crust","Upper mantle","Lower mantle","Core"], answer:1 },
+      { type:"tf", q:"The mantle makes up about 84% of Earth's volume.", answer:true, explanation:"The mantle is by far the largest layer, extending from ~35 km to ~2,900 km depth." },
+    ],
+    intermediate: [
+      { type:"order", q:"Order Earth's layers from surface to center:", items:["Crust","Upper mantle","Lower mantle","Outer core","Inner core"], correctOrder:[0,1,2,3,4] },
+      { type:"mc", q:"S-waves cannot pass through the outer core because:", options:["They are too fast","Liquids cannot support shear stress","The core is magnetic","They are absorbed by iron"], answer:1 },
+      { type:"mc", q:"The Lehmann discontinuity separates:", options:["Crust and mantle","Upper and lower mantle","Outer and inner core","Lithosphere and asthenosphere"], answer:2 },
+      { type:"tf", q:"The lithosphere includes the crust and the uppermost rigid part of the mantle.", answer:true, explanation:"The lithosphere is the rigid outer shell, comprising the crust and uppermost mantle above the asthenosphere." },
+      { type:"mc", q:"What is the approximate temperature of Earth's inner core?", options:["1,000°C","3,000°C","5,000–6,000°C","10,000°C"], answer:2 },
+      { type:"mc", q:"Shadow zones for seismic waves are caused by:", options:["Reflection off the surface","Refraction and absorption by the core","Mountain ranges","Atmospheric interference"], answer:1 },
+      { type:"mc", q:"The D\" (D double-prime) layer is located:", options:["At the base of the crust","At the top of the mantle","At the base of the mantle, above the core","Within the inner core"], answer:2 },
+      { type:"tf", q:"Rayleigh waves produce retrograde elliptical ground motion.", answer:true, explanation:"Rayleigh waves cause the ground to move in retrograde elliptical orbits in the vertical plane." },
+      { type:"mc", q:"Isostasy explains:", options:["Earthquake locations","Why continents float at different elevations on the mantle","Volcanic eruptions","Magnetic reversals"], answer:1 },
+      { type:"mc", q:"The 410 km discontinuity in the mantle is caused by:", options:["A change in chemical composition","Phase transition of olivine to wadsleyite","Melting of the mantle","Change in seismic velocity due to temperature only"], answer:1 },
+    ],
+    advanced: [
+      { type:"mc", q:"Post-perovskite is a mineral phase found in:", options:["The upper mantle","The transition zone","The D\" layer at the core-mantle boundary","The inner core"], answer:2 },
+      { type:"mc", q:"PREM (Preliminary Reference Earth Model) is based primarily on:", options:["Gravity data","Seismic wave travel times and free oscillation data","Magnetic surveys","Laboratory experiments only"], answer:1 },
+      { type:"tf", q:"The inner core is believed to rotate slightly faster than the rest of the Earth (super-rotation).", answer:true, explanation:"Seismological studies suggest the inner core may super-rotate, though the rate is debated." },
+      { type:"mc", q:"Receiver function analysis uses:", options:["Only surface waves","P-to-S conversions at discontinuities beneath a seismic station","Magnetic field measurements","Gravity anomalies"], answer:1 },
+      { type:"order", q:"Order mantle mineral phase transitions with increasing depth:", items:["Olivine","Wadsleyite","Ringwoodite","Bridgmanite (perovskite)"], correctOrder:[0,1,2,3] },
+      { type:"mc", q:"What generates Earth's magnetic field (geodynamo)?", options:["Magnetized crustal rocks","Convection of liquid iron in the outer core combined with Earth's rotation","Solar wind interaction","Inner core crystallization alone"], answer:1 },
+      { type:"mc", q:"The 660 km discontinuity marks:", options:["The core-mantle boundary","The transition from ringwoodite to bridgmanite + ferropericlase","The lithosphere-asthenosphere boundary","The Moho"], answer:1 },
+      { type:"tf", q:"Seismic anisotropy in the upper mantle indicates preferred mineral orientation due to mantle flow.", answer:true, explanation:"Olivine crystals align with mantle flow direction, causing seismic waves to travel at different speeds in different directions." },
+      { type:"mc", q:"Ultra-low velocity zones (ULVZs) at the CMB may indicate:", options:["Cold subducted material","Partial melt or compositional anomalies","Solid iron accumulations","Empty cavities"], answer:1 },
+      { type:"mc", q:"Normal modes (free oscillations) of the Earth are excited by:", options:["Tidal forces only","Large earthquakes","Volcanic eruptions only","Magnetic storms"], answer:1 },
+    ]
+  },
+  processes: {
+    name: "Geological Processes",
+    icon: "\u{1F30B}",
+    beginner: [
+      { type:"mc", q:"What type of weathering involves the physical breakdown of rocks without changing their chemical composition?", options:["Chemical weathering","Biological weathering","Mechanical weathering","Dissolution"], answer:2 },
+      { type:"mc", q:"Which agent of erosion creates V-shaped valleys?", options:["Glaciers","Wind","Rivers","Waves"], answer:2 },
+      { type:"tf", q:"Glaciers can carve U-shaped valleys.", answer:true, explanation:"Glaciers erode wide, U-shaped valleys, while rivers create narrower V-shaped valleys." },
+      { type:"mc", q:"What type of volcano has gentle slopes and is built from fluid lava flows?", options:["Stratovolcano","Shield volcano","Cinder cone","Lava dome"], answer:1 },
+      { type:"mc", q:"The process of sediment being deposited in layers is called:", options:["Erosion","Weathering","Sedimentation","Subduction"], answer:2 },
+      { type:"mc", q:"Which of these is an example of chemical weathering?", options:["Frost wedging","Root growth","Oxidation (rusting)","Abrasion"], answer:2 },
+      { type:"tf", q:"Lava and magma are the same thing.", answer:false, explanation:"Magma is molten rock below the surface; lava is magma that has reached the surface." },
+      { type:"mc", q:"What is the process by which rocks change form due to heat and pressure?", options:["Weathering","Erosion","Metamorphism","Sedimentation"], answer:2 },
+      { type:"mc", q:"A delta forms when a river:", options:["Erodes a canyon","Deposits sediment at its mouth","Floods its banks","Freezes in winter"], answer:1 },
+      { type:"tf", q:"Wind erosion is most effective in humid, forested environments.", answer:false, explanation:"Wind erosion is most effective in arid, dry environments with little vegetation." },
+    ],
+    intermediate: [
+      { type:"mc", q:"Pyroclastic flows consist of:", options:["Slow-moving lava","Hot gas and volcanic fragments moving at high speed","Mud and debris from rainfall","Glacial meltwater"], answer:1 },
+      { type:"mc", q:"Which type of metamorphism occurs adjacent to an igneous intrusion?", options:["Regional","Contact (thermal)","Dynamic","Burial"], answer:1 },
+      { type:"order", q:"Order the stages of the rock cycle starting from magma:", items:["Crystallization (igneous rock)","Weathering & erosion","Sedimentation & lithification (sedimentary rock)","Metamorphism (metamorphic rock)"], correctOrder:[0,1,2,3] },
+      { type:"tf", q:"Frost wedging is most effective in climates with frequent freeze-thaw cycles.", answer:true, explanation:"Water expands 9% when freezing, wedging rocks apart. This is most effective where temperatures oscillate around 0°C." },
+      { type:"mc", q:"Lahar is a type of:", options:["Lava flow","Volcanic mudflow","Ash cloud","Pyroclastic surge"], answer:1 },
+      { type:"mc", q:"Karst topography results from:", options:["Glacial erosion","Wind deposition","Dissolution of soluble bedrock (limestone)","Volcanic activity"], answer:2 },
+      { type:"mc", q:"What controls the viscosity of magma?", options:["Color","Silica content, temperature, and gas content","Depth only","Magnetic properties"], answer:1 },
+      { type:"tf", q:"Turbidity currents are underwater flows of sediment-laden water that create graded beds.", answer:true, explanation:"Turbidity currents deposit sediment that grades from coarse at the bottom to fine at the top (turbidites)." },
+      { type:"mc", q:"Which depositional environment produces evaporite deposits?", options:["Deep ocean","Tropical reef","Restricted basins with high evaporation","River floodplain"], answer:2 },
+      { type:"mc", q:"Mass wasting differs from erosion primarily because:", options:["It only moves small particles","Material moves downslope primarily due to gravity without a transporting agent like water or wind","It occurs only underwater","It requires volcanic activity"], answer:1 },
+    ],
+    advanced: [
+      { type:"mc", q:"Bouma sequences are characteristic of:", options:["Glacial deposits","Turbidite deposits","Aeolian dunes","Coral reefs"], answer:1 },
+      { type:"mc", q:"Pelean eruptions are characterized by:", options:["Effusive basaltic lava","Nuées ardentes (glowing avalanches)","Gentle Hawaiian-style fountaining","Submarine pillow lavas"], answer:1 },
+      { type:"order", q:"Order these mass wasting types from slowest to fastest:", items:["Creep","Solifluction","Slump","Debris avalanche"], correctOrder:[0,1,2,3] },
+      { type:"tf", q:"Diagenesis is the set of processes that convert sediment into sedimentary rock at relatively low temperatures and pressures.", answer:true, explanation:"Diagenesis includes compaction, cementation, and chemical changes that lithify sediment without reaching metamorphic conditions." },
+      { type:"mc", q:"What is the Hjulström curve used to determine?", options:["Earthquake magnitude","The velocity needed to erode, transport, and deposit sediment of different sizes","Volcanic explosivity","Metamorphic grade"], answer:1 },
+      { type:"mc", q:"Plinian eruptions are named after Pliny the Younger's account of the eruption of:", options:["Mount Etna","Mount Vesuvius","Mount St. Helens","Krakatoa"], answer:1 },
+      { type:"mc", q:"Prograde metamorphism refers to:", options:["Decreasing temperature and pressure","Increasing temperature and pressure over time","Metamorphism without deformation","Retrograde chemical reactions"], answer:1 },
+      { type:"tf", q:"Walther's Law states that facies that occur in conformable vertical succession also occur in laterally adjacent environments.", answer:true, explanation:"Walther's Law links vertical stratigraphic sequences to lateral environmental changes." },
+      { type:"mc", q:"The Volcanic Explosivity Index (VEI) is a logarithmic scale primarily based on:", options:["Lava temperature","Volume of ejected tephra and eruption column height","Earthquake magnitude","Duration of eruption"], answer:1 },
+      { type:"mc", q:"Spheroidal weathering occurs due to:", options:["Wind abrasion on all sides","Chemical weathering attacking corners and edges faster than flat surfaces","Glacial polishing","Biological action"], answer:1 },
+    ]
+  }
+};
+
+// ============================================================
+// CATEGORY METADATA
+// ============================================================
+const categoryMeta = {
+  minerals: { color: "var(--accent-purple)" },
+  time:     { color: "var(--accent-amber)" },
+  tectonics:{ color: "var(--accent-teal)" },
+  structure:{ color: "var(--accent-blue)" },
+  processes:{ color: "var(--accent-orange)" }
+};
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let state = {
+  difficulty: "beginner",
+  category: null,
+  questions: [],
+  currentIndex: 0,
+  score: 0,
+  lives: 3,
+  streak: 0,
+  bestStreak: 0,
+  correct: 0,
+  wrong: 0,
+  timerInterval: null,
+  timeLeft: 15,
+  answered: false
+};
+
+const TIMER_DURATION = 15;
+const POINTS_BASE = 100;
+const STREAK_BONUS = 25;
+const SPEED_BONUS_THRESHOLD = 10; // seconds remaining for bonus
+
+// ============================================================
+// STORAGE
+// ============================================================
+function getStorage() {
+  try {
+    return JSON.parse(localStorage.getItem("geonet_data")) || { highScore: 0, progress: {} };
+  } catch { return { highScore: 0, progress: {} }; }
+}
+function saveStorage(data) {
+  localStorage.setItem("geonet_data", JSON.stringify(data));
+}
+function resetProgress() {
+  localStorage.removeItem("geonet_data");
+  updateHighScoreDisplay();
+  alert("Progress reset!");
+}
+function updateHighScoreDisplay() {
+  const d = getStorage();
+  document.getElementById("global-high").textContent = d.highScore;
+}
+function getProgressKey(cat, diff) { return cat + "_" + diff; }
+function getCategoryProgress(cat, diff) {
+  const d = getStorage();
+  return d.progress[getProgressKey(cat, diff)] || 0;
+}
+function saveCategoryProgress(cat, diff, pct) {
+  const d = getStorage();
+  const key = getProgressKey(cat, diff);
+  if (pct > (d.progress[key] || 0)) d.progress[key] = pct;
+  saveStorage(d);
+}
+
+// ============================================================
+// SCREEN NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "categories") buildCategoryGrid();
+}
+
+// ============================================================
+// DIFFICULTY
+// ============================================================
+function setDifficulty(diff) {
+  state.difficulty = diff;
+  document.getElementById("diff-label").textContent = diff.charAt(0).toUpperCase() + diff.slice(1);
+  showScreen("categories");
+}
+
+// ============================================================
+// CATEGORY GRID
+// ============================================================
+function buildCategoryGrid() {
+  updateHighScoreDisplay();
+  const grid = document.getElementById("category-grid");
+  grid.innerHTML = "";
+  for (const [key, cat] of Object.entries(questions)) {
+    const pool = cat[state.difficulty] || [];
+    const pct = getCategoryProgress(key, state.difficulty);
+    const card = document.createElement("div");
+    card.className = "category-card";
+    card.onclick = () => startQuiz(key);
+    card.innerHTML = `
+      <div class="cat-icon">${cat.icon}</div>
+      <div class="cat-name">${cat.name}</div>
+      <div class="cat-count">${pool.length} questions</div>
+      <div class="cat-progress" style="width:${pct}%;background:${categoryMeta[key].color};"></div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+// ============================================================
+// START QUIZ
+// ============================================================
+function startQuiz(categoryKey) {
+  const pool = questions[categoryKey][state.difficulty];
+  if (!pool || pool.length === 0) return;
+
+  state.category = categoryKey;
+  state.questions = shuffleArray([...pool]).slice(0, 10);
+  state.currentIndex = 0;
+  state.score = 0;
+  state.lives = 3;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.correct = 0;
+  state.wrong = 0;
+  state.answered = false;
+
+  showScreen("quiz");
+  loadQuestion();
+}
+
+function restartCategory() {
+  if (state.category) startQuiz(state.category);
+}
+
+// ============================================================
+// LOAD QUESTION
+// ============================================================
+function loadQuestion() {
+  clearTimer();
+  state.answered = false;
+  const q = state.questions[state.currentIndex];
+  const total = state.questions.length;
+
+  document.getElementById("lives-display").textContent = "\u2764\uFE0F".repeat(state.lives);
+  document.getElementById("score-display").textContent = state.score;
+  document.getElementById("streak-display").textContent = state.streak;
+  document.getElementById("q-progress").textContent = `${state.currentIndex + 1} / ${total}`;
+  document.getElementById("q-progress-bar").style.width = `${((state.currentIndex) / total) * 100}%`;
+  document.getElementById("q-category-label").textContent = questions[state.category].name;
+  document.getElementById("q-tag").textContent = questions[state.category].name;
+  document.getElementById("q-tag").style.background = `${categoryMeta[state.category].color}22`;
+  document.getElementById("q-tag").style.color = categoryMeta[state.category].color;
+  document.getElementById("q-text").textContent = q.q;
+
+  const hint = document.getElementById("q-hint");
+  hint.style.display = "none";
+  hint.textContent = "";
+
+  const feedback = document.getElementById("feedback");
+  feedback.className = "feedback-text";
+  feedback.textContent = "";
+
+  const area = document.getElementById("answer-area");
+  area.innerHTML = "";
+
+  // Force re-animation
+  const card = document.getElementById("question-card");
+  card.style.animation = "none";
+  card.offsetHeight;
+  card.style.animation = "";
+
+  if (q.type === "mc") renderMC(q, area);
+  else if (q.type === "tf") renderTF(q, area);
+  else if (q.type === "order") renderOrder(q, area);
+
+  startTimer();
+}
+
+// ============================================================
+// MULTIPLE CHOICE
+// ============================================================
+function renderMC(q, area) {
+  const grid = document.createElement("div");
+  grid.className = "options-grid";
+  const letters = ["A","B","C","D"];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => handleMCAnswer(i, q.answer, q, grid);
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
+function handleMCAnswer(selected, correctIdx, q, grid) {
+  if (state.answered) return;
+  state.answered = true;
+  clearTimer();
+
+  const btns = grid.querySelectorAll(".option-btn");
+  btns.forEach((b, i) => {
+    b.classList.add("disabled");
+    if (i === correctIdx) b.classList.add("correct");
+    if (i === selected && i !== correctIdx) b.classList.add("incorrect");
+  });
+
+  processAnswer(selected === correctIdx, q.explanation);
+}
+
+// ============================================================
+// TRUE / FALSE
+// ============================================================
+function renderTF(q, area) {
+  const grid = document.createElement("div");
+  grid.className = "tf-grid";
+  ["True","False"].forEach((label, i) => {
+    const btn = document.createElement("button");
+    btn.className = "tf-btn";
+    btn.textContent = label;
+    btn.onclick = () => handleTFAnswer(i === 0, q.answer, q, grid);
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
+function handleTFAnswer(selected, correct, q, grid) {
+  if (state.answered) return;
+  state.answered = true;
+  clearTimer();
+
+  const btns = grid.querySelectorAll(".tf-btn");
+  btns.forEach((b, i) => {
+    b.classList.add("disabled");
+    const val = i === 0;
+    if (val === correct) b.classList.add("correct");
+    if (val === selected && val !== correct) b.classList.add("incorrect");
+  });
+
+  processAnswer(selected === correct, q.explanation);
+}
+
+// ============================================================
+// DRAG-AND-DROP ORDERING
+// ============================================================
+function renderOrder(q, area) {
+  const zone = document.createElement("div");
+  zone.className = "ordering-zone";
+
+  // Create shuffled indices
+  let indices = q.items.map((_, i) => i);
+  indices = shuffleArray(indices);
+
+  indices.forEach((origIdx, pos) => {
+    const item = document.createElement("div");
+    item.className = "drag-item";
+    item.draggable = true;
+    item.dataset.origIdx = origIdx;
+    item.innerHTML = `<span class="drag-handle">\u2630</span><span class="order-num">${pos + 1}</span><span>${q.items[origIdx]}</span>`;
+
+    item.addEventListener("dragstart", e => {
+      item.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    item.addEventListener("dragend", () => {
+      item.classList.remove("dragging");
+      document.querySelectorAll(".drag-item").forEach(d => d.classList.remove("drag-over"));
+      updateOrderNumbers(zone);
+    });
+    item.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const dragging = zone.querySelector(".dragging");
+      if (dragging && dragging !== item) {
+        item.classList.add("drag-over");
+        const rect = item.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        if (e.clientY < mid) zone.insertBefore(dragging, item);
+        else zone.insertBefore(dragging, item.nextSibling);
+      }
+    });
+    item.addEventListener("dragleave", () => item.classList.remove("drag-over"));
+
+    // Touch support
+    let touchStartY = 0;
+    item.addEventListener("touchstart", e => {
+      touchStartY = e.touches[0].clientY;
+      item.classList.add("dragging");
+    }, { passive: true });
+    item.addEventListener("touchmove", e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const target = elBelow?.closest?.(".drag-item");
+      if (target && target !== item) {
+        const rect = target.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        if (touch.clientY < mid) zone.insertBefore(item, target);
+        else zone.insertBefore(item, target.nextSibling);
+      }
+    }, { passive: false });
+    item.addEventListener("touchend", () => {
+      item.classList.remove("dragging");
+      updateOrderNumbers(zone);
+    });
+
+    zone.appendChild(item);
+  });
+
+  const submitBtn = document.createElement("button");
+  submitBtn.className = "btn btn-primary btn-small submit-order-btn";
+  submitBtn.textContent = "Submit Order";
+  submitBtn.onclick = () => checkOrder(q, zone);
+
+  area.appendChild(zone);
+  area.appendChild(submitBtn);
+}
+
+function updateOrderNumbers(zone) {
+  zone.querySelectorAll(".drag-item").forEach((item, i) => {
+    item.querySelector(".order-num").textContent = i + 1;
+  });
+}
+
+function checkOrder(q, zone) {
+  if (state.answered) return;
+  state.answered = true;
+  clearTimer();
+
+  const items = zone.querySelectorAll(".drag-item");
+  const userOrder = Array.from(items).map(el => parseInt(el.dataset.origIdx));
+  const isCorrect = JSON.stringify(userOrder) === JSON.stringify(q.correctOrder);
+
+  items.forEach(el => {
+    el.draggable = false;
+    el.style.cursor = "default";
+  });
+
+  // Disable submit button
+  const submitBtn = zone.parentElement.querySelector(".submit-order-btn");
+  if (submitBtn) submitBtn.style.display = "none";
+
+  if (!isCorrect) {
+    // Show correct order
+    const correctText = q.correctOrder.map((idx, pos) => `${pos + 1}. ${q.items[idx]}`).join(", ");
+    processAnswer(false, `Correct order: ${correctText}`);
+  } else {
+    processAnswer(true);
+  }
+}
+
+// ============================================================
+// ANSWER PROCESSING
+// ============================================================
+function processAnswer(isCorrect, explanation) {
+  const feedback = document.getElementById("feedback");
+
+  if (isCorrect) {
+    let points = POINTS_BASE;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    points += state.streak * STREAK_BONUS;
+    if (state.timeLeft >= SPEED_BONUS_THRESHOLD) points += 50;
+    state.score += points;
+    state.correct++;
+
+    feedback.textContent = `\u2705 Correct! +${points} points` + (state.streak > 1 ? ` (\u{1F525} ${state.streak} streak!)` : "");
+    feedback.className = "feedback-text correct-feedback show";
+  } else {
+    state.streak = 0;
+    state.lives--;
+    state.wrong++;
+
+    feedback.textContent = "\u274C Incorrect." + (explanation ? " " + explanation : "");
+    feedback.className = "feedback-text incorrect-feedback show";
+  }
+
+  document.getElementById("lives-display").textContent = "\u2764\uFE0F".repeat(Math.max(0, state.lives));
+  document.getElementById("score-display").textContent = state.score;
+  document.getElementById("streak-display").textContent = state.streak;
+
+  setTimeout(() => {
+    if (state.lives <= 0) {
+      endRound();
+    } else if (state.currentIndex + 1 >= state.questions.length) {
+      endRound();
+    } else {
+      state.currentIndex++;
+      loadQuestion();
+    }
+  }, 1800);
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+function startTimer() {
+  state.timeLeft = TIMER_DURATION;
+  const bar = document.getElementById("timer-bar");
+  const display = document.getElementById("timer-display");
+  bar.style.width = "100%";
+  bar.className = "timer-bar";
+  display.textContent = state.timeLeft;
+
+  state.timerInterval = setInterval(() => {
+    state.timeLeft -= 0.25;
+    const pct = (state.timeLeft / TIMER_DURATION) * 100;
+    bar.style.width = pct + "%";
+    display.textContent = Math.ceil(state.timeLeft);
+
+    if (state.timeLeft <= 5) bar.className = "timer-bar danger";
+    else if (state.timeLeft <= 8) bar.className = "timer-bar warning";
+    else bar.className = "timer-bar";
+
+    if (state.timeLeft <= 0) {
+      clearTimer();
+      if (!state.answered) {
+        state.answered = true;
+        // Time's up — treat as wrong answer
+        const q = state.questions[state.currentIndex];
+        disableCurrentInputs(q);
+        processAnswer(false, "Time's up!");
+      }
+    }
+  }, 250);
+}
+
+function clearTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+}
+
+function disableCurrentInputs(q) {
+  if (q.type === "mc") {
+    document.querySelectorAll(".option-btn").forEach(b => {
+      b.classList.add("disabled");
+      if (parseInt(b.dataset?.idx) === q.answer) b.classList.add("correct");
+    });
+    // Highlight correct answer
+    const btns = document.querySelectorAll(".option-btn");
+    if (btns[q.answer]) btns[q.answer].classList.add("correct");
+  } else if (q.type === "tf") {
+    document.querySelectorAll(".tf-btn").forEach((b, i) => {
+      b.classList.add("disabled");
+      if ((i === 0) === q.answer) b.classList.add("correct");
+    });
+  } else if (q.type === "order") {
+    document.querySelectorAll(".drag-item").forEach(el => el.draggable = false);
+    const submitBtn = document.querySelector(".submit-order-btn");
+    if (submitBtn) submitBtn.style.display = "none";
+  }
+}
+
+// ============================================================
+// END ROUND
+// ============================================================
+function endRound() {
+  clearTimer();
+
+  const total = state.correct + state.wrong;
+  const accuracy = total > 0 ? Math.round((state.correct / total) * 100) : 0;
+
+  // Save progress
+  const pool = questions[state.category][state.difficulty];
+  const pct = Math.round((state.correct / pool.length) * 100);
+  saveCategoryProgress(state.category, state.difficulty, pct);
+
+  // Check high score
+  const d = getStorage();
+  const isNewHigh = state.score > d.highScore;
+  if (isNewHigh) {
+    d.highScore = state.score;
+    saveStorage(d);
+  }
+
+  // Results
+  document.getElementById("results-score").textContent = state.score;
+  document.getElementById("res-correct").textContent = state.correct;
+  document.getElementById("res-wrong").textContent = state.wrong;
+  document.getElementById("res-streak").textContent = state.bestStreak;
+  document.getElementById("res-accuracy").textContent = accuracy + "%";
+  document.getElementById("new-hs").style.display = isNewHigh ? "block" : "none";
+
+  let emoji, title;
+  if (accuracy >= 90) { emoji = "\u{1F3C6}"; title = "Outstanding!"; }
+  else if (accuracy >= 70) { emoji = "\u{1F31F}"; title = "Great Job!"; }
+  else if (accuracy >= 50) { emoji = "\u{1F44D}"; title = "Good Effort!"; }
+  else { emoji = "\u{1F4AA}"; title = "Keep Practicing!"; }
+
+  document.getElementById("results-emoji").textContent = emoji;
+  document.getElementById("results-title").textContent = title;
+
+  showScreen("results");
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Keyboard shortcut for MC answers
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("quiz").classList.contains("active")) return;
+  if (state.answered) return;
+  const q = state.questions[state.currentIndex];
+  if (q.type === "mc") {
+    const keyMap = { "1": 0, "2": 1, "3": 2, "4": 3, "a": 0, "b": 1, "c": 2, "d": 3 };
+    const idx = keyMap[e.key.toLowerCase()];
+    if (idx !== undefined) {
+      const btns = document.querySelectorAll(".option-btn");
+      if (btns[idx]) btns[idx].click();
+    }
+  } else if (q.type === "tf") {
+    if (e.key.toLowerCase() === "t") document.querySelectorAll(".tf-btn")[0]?.click();
+    if (e.key.toLowerCase() === "f") document.querySelectorAll(".tf-btn")[1]?.click();
+  }
+});
+</script>
+</body>
+</html>

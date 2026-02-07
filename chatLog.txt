@@ -1,0 +1,130 @@
+
+ ▐▛███▜▌   Claude Code v2.1.34
+▝▜█████▛▘  Opus 4.6 · Claude Pro
+  ▘▘ ▝▝    ~\Desktop\GeoNet
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Plan to implement                                                                                    │
+│                                                                                                      │
+│ GeoNet - Interactive Geology Quiz Game                                                               │
+│                                                                                                      │
+│ Context                                                                                              │
+│                                                                                                      │
+│ Build an educational quiz game for undergraduate geology students as a single-page HTML/CSS/JS web   │
+│ app. The game helps students learn mineral/rock identification, geological concepts, and earth       │
+│ science fundamentals through interactive quizzes with scoring and progress tracking.                 │
+│                                                                                                      │
+│ Game Features                                                                                        │
+│                                                                                                      │
+│ Core Gameplay                                                                                        │
+│                                                                                                      │
+│ - Multiple game modes:                                                                               │
+│   a. Mineral & Rock ID - Identify minerals/rocks from descriptions and visual clues (hardness,       │
+│ luster, cleavage, color, texture)                                                                    │
+│   b. Geologic Time - Match eras/periods/epochs, order events chronologically                         │
+│   c. Plate Tectonics - Questions on boundary types, associated features, and geological processes    │
+│   d. Earth Structure - Layers of the earth, composition, seismic waves                               │
+│   e. Processes - Weathering, erosion, volcanism, metamorphism, sedimentation                         │
+│ - Question types:                                                                                    │
+│   - Multiple choice (4 options)                                                                      │
+│   - True/False                                                                                       │
+│   - Drag-and-drop ordering (e.g., order geologic time periods)                                       │
+│ - Difficulty levels: Beginner, Intermediate, Advanced                                                │
+│                                                                                                      │
+│ Scoring & Progress                                                                                   │
+│                                                                                                      │
+│ - Points per correct answer (bonus for streaks and speed)                                            │
+│ - Lives system (3 lives per round)                                                                   │
+│ - High score tracking via localStorage                                                               │
+│ - Progress bar showing completion within each category                                               │
+│                                                                                                      │
+│ UI/UX                                                                                                │
+│                                                                                                      │
+│ - Clean, modern dark-themed UI with geological color palette (earth tones, mineral-inspired accents) │
+│ - Responsive design (works on desktop and mobile)                                                    │
+│ - Animated transitions between questions                                                             │
+│ - Visual feedback for correct/incorrect answers                                                      │
+│ - Category selection screen with icons                                                               │
+│ - End-of-round summary with stats                                                                    │
+│                                                                                                      │
+│ Technical Approach                                                                                   │
+│                                                                                                      │
+│ Single file: index.html                                                                              │
+│                                                                                                      │
+│ Everything in one file for maximum portability - inline CSS and JS.                                  │
+│                                                                                                      │
+│ Structure                                                                                            │
+│                                                                                                      │
+│ 1. HTML - Semantic markup with screens: splash, category select, quiz, results                       │
+│ 2. CSS - CSS variables for theming, flexbox/grid layouts, animations                                 │
+│ 3. JavaScript:                                                                                       │
+│   - Question bank object organized by category and difficulty (~100+ questions)                      │
+│   - Game state manager (score, lives, current question, streak)                                      │
+│   - Screen navigation system (show/hide screens)                                                     │
+│   - Timer for each question (15 seconds)                                                             │
+│   - Drag-and-drop for ordering questions (native HTML5 drag API)                                     │
+│   - localStorage for high scores and progress                                                        │
+│                                                                                                      │
+│ Verification                                                                                         │
+│                                                                                                      │
+│ 1. Open index.html in any browser                                                                    │
+│ 2. Test each category has questions loading correctly                                                │
+│ 3. Test scoring: correct answers add points, wrong answers reduce lives                              │
+│ 4. Test drag-and-drop ordering questions work on desktop                                             │
+│ 5. Test responsive layout on narrow viewport                                                         │
+│ 6. Test high scores persist after page reload                                                        │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+● I'll build this comprehensive geology quiz game. Let me create the single-file index.html with all the
+   features specified.
+
+● Write(index.html)
+  ⎿  Wrote 1 lines to index.html
+       1 <!DOCTYPE html>
+       2 <html lang="en">
+       3 <head>
+       4 <meta charset="UTF-8">
+       5 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       6 <title>GeoNet - Interactive Geology Quiz</title>
+       7 <style>
+       8 :root {
+       9   --bg-primary: #1a1a2e;
+      10   --bg-secondary: #16213e;
+
+● The GeoNet quiz game has been created as index.html. Here's what's included:
+
+  5 Categories with questions across 3 difficulty levels (~100+ questions total):
+  - Mineral & Rock ID - hardness, luster, cleavage, rock types
+  - Geologic Time - eras, periods, dating methods
+  - Plate Tectonics - boundaries, features, processes
+  - Earth Structure - layers, seismic waves, discontinuities
+  - Geological Processes - weathering, volcanism, erosion
+
+  3 Question Types:
+  - Multiple choice (4 options, keyboard shortcuts A-D or 1-4)
+  - True/False (keyboard shortcuts T/F)
+  - Drag-and-drop ordering (HTML5 drag API + touch support)
+
+  Game Features:
+  - 3 difficulty levels (Beginner/Intermediate/Advanced)
+  - 15-second timer per question with animated bar
+  - 3 lives per round
+  - Scoring with streak bonuses and speed bonuses
+  - Progress bars per category/difficulty
+  - High score tracking via localStorage
+  - End-of-round summary with accuracy stats
+
+  UI/UX:
+  - Dark theme with earth-tone/mineral-inspired accent colors
+  - Responsive layout (works on desktop and mobile)
+  - Animated transitions, visual feedback for correct/incorrect
+  - Clean, modern card-based design
+
+  Open index.html in any browser to play.
+
+✻ Worked for 4m 44s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ open index.html
+────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ctrl+t to hide tasks
