@@ -356,7 +356,7 @@ SOFTWARE.
 
 - **Issues**: Report bugs via [GitHub Issues](https://github.com/yourusername/geonet/issues)
 - **Questions**: Start a [Discussion](https://github.com/yourusername/geonet/discussions)
-- **Email**: geonet@example.com
+- **Email**: geonet.myanmar@gmail.com
 
 ---
 
